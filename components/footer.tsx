@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Facebook, Instagram, Twitter, Youtube, Linkedin, MessageCircle } from "lucide-react";
 
 // Custom TikTok Icon Component
@@ -17,15 +18,24 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 export const Footer = () => {
   const pathname = usePathname();
+  const [hasSidebar, setHasSidebar] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [currentYear, setCurrentYear] = useState(2025);
   
-  // Check if we're on a page with a sidebar
-  const hasSidebar = pathname?.startsWith('/dashboard') || pathname?.startsWith('/courses');
+  useEffect(() => {
+    setMounted(true);
+    // Check if we're on a page with a sidebar
+    const sidebar = pathname?.startsWith('/dashboard') || pathname?.startsWith('/courses');
+    setHasSidebar(sidebar || false);
+    // Set year on client side to avoid hydration mismatch
+    setCurrentYear(new Date().getFullYear());
+  }, [pathname]);
   
   return (
     <footer className="py-6 border-t">
       <div className="container mx-auto px-4">
         <div className={`text-center text-muted-foreground ${
-          hasSidebar 
+          mounted && hasSidebar 
             ? 'md:rtl:pr-56 md:ltr:pl-56 lg:rtl:pr-80 lg:ltr:pl-80' 
             : ''
         }`}>
@@ -33,7 +43,7 @@ export const Footer = () => {
             <p className="font-semibold text-lg text-brand"> واتساب : 01093662371</p>
           </div>
           
-          <p>© {new Date().getFullYear()} Mordesu Studio. جميع الحقوق محفوظة</p>
+          <p>© {currentYear} Mordesu Studio. جميع الحقوق محفوظة</p>
         </div>
       </div>
     </footer>
