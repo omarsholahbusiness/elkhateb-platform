@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, use } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { CheckCircle, Circle } from "lucide-react";
+import { CheckCircle, Circle, Video } from "lucide-react";
 import axios from "axios";
 import { cn } from "@/lib/utils";
 
@@ -138,12 +138,35 @@ export const CourseSidebar = ({ course }: CourseSidebarProps) => {
     );
   }
 
+  const courseId = course?.id || params.courseId;
+  const isLivestreamPage = pathname?.includes('/live');
+
   return (
     <div className="h-full border-l flex flex-col overflow-y-auto shadow-lg w-72 md:w-80">
       <div className="p-8 flex flex-col border-b">
         <h1 className="font-semibold">{courseTitle || course?.title}</h1>
       </div>
       <div className="flex flex-col w-full">
+        {/* Livestreams Link */}
+        {courseId && (
+          <div
+            className={cn(
+              "flex items-center gap-x-2 text-sm font-[500] rtl:pr-4 ltr:pl-4 py-4 transition cursor-pointer border-b",
+              isLivestreamPage
+                ? "bg-slate-200 text-slate-900"
+                : "text-slate-500 hover:bg-slate-300/20 hover:text-slate-600"
+            )}
+            onClick={() => {
+              router.push(`/courses/${courseId}/live`);
+              setSelectedContentId(null);
+            }}
+          >
+            <Video className="h-4 w-4" />
+            <span className="rtl:text-right ltr:text-left flex-grow mr-1">
+              البث المباشر
+            </span>
+          </div>
+        )}
         {courseContent.map((content) => {
           const isSelected = selectedContentId === content.id;
           const isCompleted = content.type === 'chapter' 

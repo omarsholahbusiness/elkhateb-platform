@@ -42,6 +42,7 @@ model Course {
   chapters Chapter[]
   purchases Purchase[]
   quizzes Quiz[]
+  liveSessions LiveSessionCourse[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -212,4 +213,32 @@ model QuizAnswer {
 
     @@index([questionId])
     @@index([quizResultId])
+}
+
+model LiveSession {
+    id String @id @default(uuid())
+    title String @db.Text
+    description String? @db.Text
+    linkUrl String @db.Text
+    linkType String // "ZOOM" or "GOOGLE_MEET"
+    startDate DateTime
+    endDate DateTime?
+    isPublished Boolean @default(false)
+    isFree Boolean @default(false)
+    chapterId String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    courses LiveSessionCourse[]
+
+    @@index([chapterId])
+}
+
+model LiveSessionCourse {
+    liveSessionId String
+    courseId String
+    liveSession LiveSession @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+    course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+    @@id([liveSessionId, courseId])
+    @@index([courseId])
 }

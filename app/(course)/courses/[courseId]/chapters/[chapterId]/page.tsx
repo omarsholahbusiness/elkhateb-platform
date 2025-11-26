@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Lock, FileText, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Lock, FileText, Download, Video, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { PlyrVideoPlayer } from "@/components/plyr-video-player";
@@ -43,6 +43,7 @@ const ChapterPage = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [courseProgress, setCourseProgress] = useState(0);
   const [hasAccess, setHasAccess] = useState(false);
+  const [chapterLivestreams, setChapterLivestreams] = useState<any[]>([]);
 
   console.log("🔍 ChapterPage render:", {
     chapterId: routeParams.chapterId,
@@ -157,6 +158,17 @@ const ChapterPage = () => {
         setIsCompleted(chapterResponse.data.userProgress?.[0]?.isCompleted || false);
         setCourseProgress(progressResponse.data.progress);
         setHasAccess(accessResponse.data.hasAccess);
+
+        // Fetch livestreams for this chapter
+        try {
+          const livestreamsResponse = await axios.get(`/api/courses/${routeParams.courseId}/chapters/${routeParams.chapterId}/livestreams`);
+          if (livestreamsResponse.status === 200) {
+            setChapterLivestreams(livestreamsResponse.data);
+          }
+        } catch (error) {
+          // Silently fail if no livestreams or error - it's optional
+          console.log("No livestreams for this chapter or error:", error);
+        }
       } catch (error) {
         const axiosError = error as AxiosError;
         console.error("🔍 Error fetching data:", axiosError);
@@ -406,6 +418,79 @@ const ChapterPage = () => {
                       تحميل
                     </Button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Livestreams Section */}
+            {chapterLivestreams.length > 0 && (
+              <div className="mt-6 p-4 border rounded-lg bg-card">
+                <div className="flex items-center gap-2 mb-3">
+                  <Video className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold">جلسات البث المباشر</h3>
+                </div>
+                <div className="space-y-3">
+                  {chapterLivestreams.map((livestream) => {
+                    const formatDate = (dateString: string) => {
+                      const date = new Date(dateString);
+                      return date.toLocaleDateString("ar-EG", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      });
+                    };
+
+                    return (
+                      <div key={livestream.id} className="flex items-center justify-between p-3 bg-secondary/50 border rounded-md">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{livestream.title}</h4>
+                          {livestream.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{livestream.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                            <span>البدء: {formatDate(livestream.startDate)}</span>
+                            {livestream.status === "active" && (
+                              <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full">جاري البث</span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant={livestream.status === "active" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (livestream.status === "active") {
+                              window.open(livestream.linkUrl, "_blank", "noopener,noreferrer");
+                            } else {
+                              router.push(`/courses/${routeParams.courseId}/live/${livestream.id}`);
+                            }
+                          }}
+                          disabled={livestream.status === "ended"}
+                          className="flex items-center gap-1"
+                        >
+                          {livestream.status === "active" && (
+                            <>
+                              <ExternalLink className="h-4 w-4" />
+                              انضم الآن
+                            </>
+                          )}
+                          {livestream.status === "not_started" && "عرض التفاصيل"}
+                          {livestream.status === "ended" && "انتهت"}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/courses/${routeParams.courseId}/live`)}
+                    className="w-full"
+                  >
+                    عرض جميع جلسات البث المباشر
+                  </Button>
                 </div>
               </div>
             )}
